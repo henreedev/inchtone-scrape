@@ -1,26 +1,38 @@
 import requests
 import bs4
 import pandas as pd
+import urllib
+from requests_html import HTML
+from requests_html import HTMLSession
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
 
-website_url = ""
-results = requests.get(website_url)
-soup = bs4.BeautifulSoup(result.text,'lxml')
-cases = soup.find_all('div' ,class_= 'maincounter-number')
+def get_source(url):
+    try:
+        session = HTMLSession()
+        response = session.get(url)
+        return response
 
-data = []
- 
-# Find the span and get data from it
-for i in cases:
-    span = i.find('span')
-    data.append(span.string)
- 
-# Display number of cases
-print(data)
+    except requests.exceptions.RequestException as e:
+        print(e)
 
-df = pd.DataFrame({"CoronaData": data})
- 
-# Naming the columns
-df.index = ['TotalCases', ' Deaths', 'Recovered']
 
-# Exporting data into Excel
-df.to_csv('Corona_Data.csv')
+def scrape_google(query):
+    
+    query = urllib.parse.quote_plus(query)
+    response = get_source("https://www.google.com/search?q=" + query)
+
+    links = list(response.html.absolute_links)
+    google_domains = ('https://www.google.', 
+                      'https://google.', 
+                      'https://webcache.googleusercontent.', 
+                      'http://webcache.googleusercontent.', 
+                      'https://policies.google.',
+                      'https://support.google.',
+                      'https://maps.google.')
+
+    for url in links[:]:
+        if url.startswith(google_domains):
+            links.remove(url)
+
+    return links
